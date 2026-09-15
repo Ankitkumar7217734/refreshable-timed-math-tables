@@ -1,0 +1,6 @@
+{
+  "name": "Refreshable Timed Math Tables",
+  "description": "Timed 9x9 addition and subtraction tables and interactive squares (2-30) & cubes (2-20) trainer with instant self-checking and stopwatches.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
