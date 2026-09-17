@@ -18,6 +18,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SquaresCubesPractice } from './components/SquaresCubesPractice';
+import { MultiplicationPractice } from './components/MultiplicationPractice';
 
 // ==========================================
 // 1. DATA TYPES & INTERFACES
@@ -29,7 +30,7 @@ interface SharedData {
   corner: number;         // 1 corner number (10 - 99)
 }
 
-export type TabType = 'addition' | 'subtraction' | 'powers';
+export type TabType = 'addition' | 'subtraction' | 'powers' | 'multiplication';
 type CellStatus = 'correct' | 'wrong' | 'neutral';
 export type ThemeId = 'ocean' | 'forest' | 'sunset' | 'classic' | 'berry';
 
@@ -733,7 +734,7 @@ export default function App() {
               Timed Math Tables
             </h1>
             <p className="text-slate-600 text-sm sm:text-base mt-1">
-              9×9 practice tables with shared headers, rapid-fire squares (2–30) & cubes (2–20), auto-checking, and stopwatches.
+              9×9 practice tables with shared headers, rapid-fire squares (2–30) & cubes (2–20), multiplication tables (2–30), auto-checking, and stopwatches.
             </p>
           </div>
 
@@ -886,6 +887,34 @@ export default function App() {
               }}
             >
               2–30 & 2–20
+            </span>
+          </button>
+
+          {/* Multiplication Tables Tab Button */}
+          <button
+            id="tab-multiplication-button"
+            role="tab"
+            aria-selected={activeTab === 'multiplication'}
+            aria-controls="multiplication-tab-panel"
+            onClick={() => setActiveTab('multiplication')}
+            className="px-5 sm:px-6 py-2.5 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-offset-2 active:scale-95 shadow-xs inline-flex items-center gap-2"
+            style={{
+              backgroundColor: activeTab === 'multiplication' ? currentTheme.subtraction.cornerBg : '#FFFFFF',
+              color: activeTab === 'multiplication' ? '#FFFFFF' : '#475569',
+              border: activeTab === 'multiplication' ? `1px solid ${currentTheme.subtraction.cornerBg}` : '1px solid #D1D5DB',
+              boxShadow: activeTab === 'multiplication' ? `0 2px 8px -1px ${currentTheme.subtraction.cornerBg}40` : undefined,
+            }}
+          >
+            <span>✖️</span>
+            <span>Multiplication</span>
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-semibold tabular-nums"
+              style={{
+                backgroundColor: activeTab === 'multiplication' ? 'rgba(255,255,255,0.2)' : '#F1F5F9',
+                color: activeTab === 'multiplication' ? '#FFFFFF' : '#64748B',
+              }}
+            >
+              2–30
             </span>
           </button>
         </div>
@@ -1491,12 +1520,24 @@ export default function App() {
           <SquaresCubesPractice currentTheme={currentTheme} />
         </div>
 
+        {/* --------------------------------------------------------- */}
+        {/* TAB 4: MULTIPLICATION (Only visible when activeTab === 'multiplication') */}
+        {/* --------------------------------------------------------- */}
+        <div
+          id="multiplication-tab-panel"
+          role="tabpanel"
+          aria-labelledby="tab-multiplication-button"
+          style={{ display: activeTab === 'multiplication' ? 'block' : 'none' }}
+        >
+          <MultiplicationPractice currentTheme={currentTheme} />
+        </div>
+
         {/* ========================================================= */}
         {/* FOOTER */}
         {/* ========================================================= */}
         <footer id="app-footer" className="mt-12 text-center">
           <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            All tables share the same headers · Green = correct / Red = try again · Squares & cubes trainer checks answers on Enter and passes to the next question.
+            All tables share the same headers · Green = correct / Red = try again · Squares, cubes, and multiplication trainers check answers on Enter and pass to the next question.
           </p>
         </footer>
       </div>

@@ -1,6 +1,6 @@
 export type ThemeId = 'ocean' | 'forest' | 'sunset' | 'classic' | 'berry';
 
-export type TabType = 'addition' | 'subtraction' | 'powers';
+export type TabType = 'addition' | 'subtraction' | 'powers' | 'multiplication';
 
 export type CellStatus = 'correct' | 'wrong' | 'neutral';
 
@@ -76,6 +76,23 @@ export interface PowerHistoryItem {
   id: string;
   base: number;
   power: 2 | 3;
+  answer: number;
+  userAnswer: string;
+  isCorrect: boolean;
+  timestamp: number;
+}
+
+export interface MultiplicationQuestion {
+  id: string;
+  table: number;
+  multiplier: number;
+  answer: number;
+}
+
+export interface MultiplicationHistoryItem {
+  id: string;
+  table: number;
+  multiplier: number;
   answer: number;
   userAnswer: string;
   isCorrect: boolean;
