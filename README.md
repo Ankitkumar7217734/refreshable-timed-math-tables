@@ -4,7 +4,7 @@
 
 # Refreshable Timed Math Tables
 
-Timed 9×9 addition & subtraction tables plus a rapid-fire squares (2–30) & cubes (2–20) trainer — with instant self-checking, per-table stopwatches, and 5 color themes.
+Timed 9×9 addition & subtraction tables plus rapid-fire squares (2–30), cubes (2–20) & multiplication (2–30) trainers — with instant self-checking, per-table stopwatches, and a fixed Ocean theme.
 
 **🔗 Live app: https://ankitkumar7217734.github.io/refreshable-timed-math-tables/**
 
@@ -17,7 +17,8 @@ Timed 9×9 addition & subtraction tables plus a rapid-fire squares (2–30) & cu
 - **Crosshair highlight** — focusing a cell traces its row & column headers
 - **Keyboard-first** — arrow keys move between cells (caret-aware), Enter checks, Esc passes in the powers trainer
 - **Squares & Cubes trainer** — Enter submits, Esc passes/reveals, streak + best-streak + accuracy stats, last-20 history, collapsible reference tables
-- **5 themes** (Ocean · Forest · Sunset · Classic · Berry) — repaint every surface live, no reload
+- **Multiplication trainer (NEW)** — tables 2–30 with From/To range picker, quick ranges, random questions (e.g. 2 × 2, 15 × 6), streak + accuracy stats, history, and lookup tables
+- **Fixed Ocean theme** — single Azure & Deep Marine palette across every surface
 - **Accessible** — proper tabs/radiogroup ARIA, `aria-live` timer pills, tabular numerals, responsive layout
 
 ## Run Locally

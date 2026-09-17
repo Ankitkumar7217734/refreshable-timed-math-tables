@@ -1,4 +1,4 @@
-export type ThemeId = 'ocean' | 'forest' | 'sunset' | 'classic' | 'berry';
+export type ThemeId = 'ocean';
 
 export type TabType = 'addition' | 'subtraction' | 'powers' | 'multiplication';
 

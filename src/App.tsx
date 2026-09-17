@@ -4,8 +4,7 @@
  * A self-contained, browser-only math practice application with:
  * - Shared random 9x9 dataset (top headers, left headers, corner number)
  * - Immediate full-state re-render via "Press to refresh the data" button
- * - User-controlled dynamic theme color selector ('Ocean', 'Forest', 'Sunset', 'Classic', 'Berry')
- *   with Ocean as the premier default theme
+ * - Fixed Ocean visual theme (Azure & Deep Marine, no theme switching)
  * - True aquatic Ocean palette: Vibrant Ocean Azure Addition & Deep Marine Royal Subtraction (no green-teal clash)
  * - Dynamic cell highlight colors: active cell background tint, operation-matched focus ring,
  *   crosshair row & column header highlight tracing, and theme-harmonized validation feedback
@@ -32,7 +31,7 @@ interface SharedData {
 
 export type TabType = 'addition' | 'subtraction' | 'powers' | 'multiplication';
 type CellStatus = 'correct' | 'wrong' | 'neutral';
-export type ThemeId = 'ocean' | 'forest' | 'sunset' | 'classic' | 'berry';
+export type ThemeId = 'ocean';
 
 interface PracticeState {
   answers: Record<string, string>;       // Key format: "row-col" (0-8, 0-8)
@@ -88,7 +87,7 @@ export interface ThemeConfig {
 }
 
 // ==========================================
-// 2. PREDEFINED THEMES CONFIGURATION
+// 2. OCEAN THEME CONFIGURATION (single fixed theme)
 // ==========================================
 
 export const THEMES: Record<ThemeId, ThemeConfig> = {
@@ -135,186 +134,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
       checkBtnHoverBg: '#1D4ED8',
       tabActiveBg: '#1D4ED8',
       tabFocusRing: '#1D4ED8',
-    },
-  },
-  forest: {
-    id: 'forest',
-    name: 'Forest',
-    icon: '🌲',
-    description: 'Emerald & Olive woodland tones',
-    pageBg: '#F4FBF4',
-    cardBorder: '#BBF7D0',
-    refreshBtnBg: '#166534',
-    refreshBtnHoverBg: '#15803D',
-    cellFocusBg: '#ECFDF5',
-    cellHoverBg: '#F0FDF4',
-    cellFocusRing: '#16A34A',
-    headerHighlightBg: '#1B5E20',
-    headerHighlightRing: '#4ADE80',
-    correctBg: '#D1FAE5',
-    correctBorder: '#059669',
-    correctText: '#065F46',
-    wrongBg: '#FEE2E2',
-    wrongBorder: '#EF4444',
-    wrongText: '#991B1B',
-    addition: {
-      headerBg: '#2E7D32',
-      headerText: '#FFFFFF',
-      cornerBg: '#1B5E20',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#E8F5E9',
-      answerBodyText: '#1B5E20',
-      checkBtnBg: '#1B5E20',
-      checkBtnHoverBg: '#2E7D32',
-      tabActiveBg: '#2E7D32',
-      tabFocusRing: '#2E7D32',
-    },
-    subtraction: {
-      headerBg: '#4D7C0F',
-      headerText: '#FFFFFF',
-      cornerBg: '#365314',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#ECFCCB',
-      answerBodyText: '#365314',
-      checkBtnBg: '#365314',
-      checkBtnHoverBg: '#4D7C0F',
-      tabActiveBg: '#4D7C0F',
-      tabFocusRing: '#4D7C0F',
-    },
-  },
-  sunset: {
-    id: 'sunset',
-    name: 'Sunset',
-    icon: '🌅',
-    description: 'Warm Tangerine & Dusk Violet radiance',
-    pageBg: '#FFF7ED',
-    cardBorder: '#FED7AA',
-    refreshBtnBg: '#C2410C',
-    refreshBtnHoverBg: '#9A3412',
-    cellFocusBg: '#FFF7ED',
-    cellHoverBg: '#FFFBEB',
-    cellFocusRing: '#EA580C',
-    headerHighlightBg: '#9A3412',
-    headerHighlightRing: '#FDBA74',
-    correctBg: '#DCFCE7',
-    correctBorder: '#16A34A',
-    correctText: '#15803D',
-    wrongBg: '#FFE4E6',
-    wrongBorder: '#F43F5E',
-    wrongText: '#BE123C',
-    addition: {
-      headerBg: '#EA580C',
-      headerText: '#FFFFFF',
-      cornerBg: '#7C2D12',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#FEF08A',
-      answerBodyText: '#7C2D12',
-      checkBtnBg: '#7C2D12',
-      checkBtnHoverBg: '#9A3412',
-      tabActiveBg: '#EA580C',
-      tabFocusRing: '#EA580C',
-    },
-    subtraction: {
-      headerBg: '#8B5CF6',
-      headerText: '#FFFFFF',
-      cornerBg: '#4C1D95',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#EDE9FE',
-      answerBodyText: '#4C1D95',
-      checkBtnBg: '#4C1D95',
-      checkBtnHoverBg: '#6D28D9',
-      tabActiveBg: '#8B5CF6',
-      tabFocusRing: '#8B5CF6',
-    },
-  },
-  classic: {
-    id: 'classic',
-    name: 'Classic',
-    icon: '⚡',
-    description: 'Coral & Deep Blue original palette',
-    pageBg: '#F6F6F7',
-    cardBorder: '#E2E8F0',
-    refreshBtnBg: '#1E293B',
-    refreshBtnHoverBg: '#334155',
-    cellFocusBg: '#FFF1F2',
-    cellHoverBg: '#F8FAFC',
-    cellFocusRing: '#F96167',
-    headerHighlightBg: '#E0484E',
-    headerHighlightRing: '#FDA4AF',
-    correctBg: '#D3F5D3',
-    correctBorder: '#22A355',
-    correctText: '#0F6B2E',
-    wrongBg: '#FFD9D9',
-    wrongBorder: '#E5484D',
-    wrongText: '#A4161A',
-    addition: {
-      headerBg: '#F96167',
-      headerText: '#FFFFFF',
-      cornerBg: '#2F3C7E',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#F9E795',
-      answerBodyText: '#2F3C7E',
-      checkBtnBg: '#2F3C7E',
-      checkBtnHoverBg: '#3D4C9A',
-      tabActiveBg: '#F96167',
-      tabFocusRing: '#F96167',
-    },
-    subtraction: {
-      headerBg: '#065A82',
-      headerText: '#FFFFFF',
-      cornerBg: '#21295C',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#CADCFC',
-      answerBodyText: '#21295C',
-      checkBtnBg: '#21295C',
-      checkBtnHoverBg: '#2F3A7D',
-      tabActiveBg: '#065A82',
-      tabFocusRing: '#065A82',
-    },
-  },
-  berry: {
-    id: 'berry',
-    name: 'Berry',
-    icon: '🍇',
-    description: 'Ruby Berry & Royal Indigo depths',
-    pageBg: '#FDF2F8',
-    cardBorder: '#FBCFE8',
-    refreshBtnBg: '#831843',
-    refreshBtnHoverBg: '#9D174D',
-    cellFocusBg: '#FDF2F8',
-    cellHoverBg: '#FDF4FF',
-    cellFocusRing: '#DB2777',
-    headerHighlightBg: '#BE185D',
-    headerHighlightRing: '#F472B6',
-    correctBg: '#DCFCE7',
-    correctBorder: '#16A34A',
-    correctText: '#15803D',
-    wrongBg: '#FEE2E2',
-    wrongBorder: '#E11D48',
-    wrongText: '#9F1239',
-    addition: {
-      headerBg: '#DB2777',
-      headerText: '#FFFFFF',
-      cornerBg: '#831843',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#FCE7F3',
-      answerBodyText: '#831843',
-      checkBtnBg: '#831843',
-      checkBtnHoverBg: '#9D174D',
-      tabActiveBg: '#DB2777',
-      tabFocusRing: '#DB2777',
-    },
-    subtraction: {
-      headerBg: '#4F46E5',
-      headerText: '#FFFFFF',
-      cornerBg: '#312E81',
-      cornerText: '#FFFFFF',
-      answerBodyBg: '#E0E7FF',
-      answerBodyText: '#312E81',
-      checkBtnBg: '#312E81',
-      checkBtnHoverBg: '#3730A3',
-      tabActiveBg: '#4F46E5',
-      tabFocusRing: '#4F46E5',
     },
   },
 };
@@ -379,9 +198,8 @@ export default function App() {
   // Active navigation tab
   const [activeTab, setActiveTab] = useState<TabType>('addition');
 
-  // Active theme selector state: Ocean is the primary default theme
-  const [activeThemeId, setActiveThemeId] = useState<ThemeId>('ocean');
-  const currentTheme = THEMES[activeThemeId] || THEMES.ocean;
+  // Fixed Ocean theme (theme selector removed)
+  const currentTheme = THEMES.ocean;
 
   // Track focused cell for crosshair highlight (row & col headers + cell highlight)
   const [activeCell, setActiveCell] = useState<{ tab: TabType; r: number; c: number } | null>(null);
@@ -754,69 +572,6 @@ export default function App() {
             </button>
           </div>
         </header>
-
-        {/* ========================================================= */}
-        {/* THEME SELECTOR BAR */}
-        {/* ========================================================= */}
-        <div
-          id="theme-selector-container"
-          className="flex flex-wrap items-center justify-between gap-3 p-2.5 sm:p-3 mb-6 bg-white rounded-2xl border shadow-xs transition-colors duration-200"
-          style={{ borderColor: currentTheme.cardBorder }}
-        >
-          <div className="flex items-center gap-2 pl-1">
-            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <span>🎨</span> Theme:
-            </span>
-          </div>
-
-          <div
-            className="flex flex-wrap items-center gap-1.5 sm:gap-2"
-            role="radiogroup"
-            aria-label="Color Theme Selection"
-          >
-            {Object.values(THEMES).map((theme) => {
-              const isSelected = activeThemeId === theme.id;
-              return (
-                <button
-                  key={theme.id}
-                  id={`theme-btn-${theme.id}`}
-                  role="radio"
-                  aria-checked={isSelected}
-                  onClick={() => setActiveThemeId(theme.id)}
-                  title={`${theme.name}: ${theme.description}`}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                    isSelected
-                      ? 'shadow-xs scale-100 ring-2'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200/90 active:scale-95'
-                  }`}
-                  style={
-                    isSelected
-                      ? {
-                          backgroundColor: theme.addition.headerBg,
-                          color: '#FFFFFF',
-                          borderColor: theme.addition.cornerBg,
-                          boxShadow: `0 0 0 2px ${theme.cellFocusRing}`,
-                        }
-                      : undefined
-                  }
-                >
-                  {/* Dual Color Swatch Preview */}
-                  <span className="flex items-center -space-x-1.5">
-                    <span
-                      className="inline-block w-3.5 h-3.5 rounded-full ring-1 ring-white shadow-2xs"
-                      style={{ backgroundColor: theme.addition.headerBg }}
-                    />
-                    <span
-                      className="inline-block w-3.5 h-3.5 rounded-full ring-1 ring-white shadow-2xs"
-                      style={{ backgroundColor: theme.subtraction.headerBg }}
-                    />
-                  </span>
-                  <span>{theme.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* ========================================================= */}
         {/* OPERATION TABS */}
