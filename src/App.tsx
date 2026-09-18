@@ -274,6 +274,34 @@ export default function App() {
   };
 
   // ------------------------------------------
+  // Manual Clock Controls (user starts & stops the timer themselves)
+  // ------------------------------------------
+  const handleStartClock = (tab: TabType) => {
+    const setter = tab === 'addition' ? setAdditionState : setSubtractionState;
+    setter((prev) => ({
+      ...prev,
+      timerStatus: 'running',
+      startTime: Date.now(),
+      elapsedSeconds: 0,
+      finalTimeFormatted: '',
+    }));
+  };
+
+  const handleStopClock = (tab: TabType) => {
+    const setter = tab === 'addition' ? setAdditionState : setSubtractionState;
+    setter((prev) => {
+      if (prev.timerStatus !== 'running') return prev;
+      const elapsed = prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : prev.elapsedSeconds;
+      return {
+        ...prev,
+        timerStatus: 'finished',
+        elapsedSeconds: elapsed,
+        finalTimeFormatted: formatTime(elapsed),
+      };
+    });
+  };
+
+  // ------------------------------------------
   // Action 2: Input Change Handler
   // ------------------------------------------
   const handleInputChange = (
@@ -289,17 +317,6 @@ export default function App() {
     const setter = tab === 'addition' ? setAdditionState : setSubtractionState;
 
     setter((prev) => {
-      // If timer is idle, start it on the first keystroke
-      let newTimerStatus = prev.timerStatus;
-      let newStartTime = prev.startTime;
-      let newElapsed = prev.elapsedSeconds;
-
-      if (prev.timerStatus === 'idle') {
-        newTimerStatus = 'running';
-        newStartTime = Date.now();
-        newElapsed = 0;
-      }
-
       // Live feel: immediately clear any previous correct/wrong mark on this cell
       const nextStatusMap = { ...prev.statusMap };
       delete nextStatusMap[cellKey];
@@ -311,9 +328,6 @@ export default function App() {
           [cellKey]: value,
         },
         statusMap: nextStatusMap,
-        timerStatus: newTimerStatus,
-        startTime: newStartTime,
-        elapsedSeconds: newElapsed,
       };
     });
   };
@@ -356,24 +370,6 @@ export default function App() {
     }
 
     setter((prev) => {
-      // Timer stops ONLY when ALL 81 cells are filled (zero blanks)
-      let finalTimerStatus = prev.timerStatus;
-      let finalFormatted = prev.finalTimeFormatted;
-
-      if (blankCount === 0) {
-        // Freeze stopwatch!
-        if (prev.timerStatus === 'running') {
-          finalTimerStatus = 'finished';
-          const elapsed = prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : prev.elapsedSeconds;
-          finalFormatted = formatTime(elapsed);
-        } else if (prev.timerStatus === 'finished') {
-          finalFormatted = prev.finalTimeFormatted || formatTime(prev.elapsedSeconds);
-        } else {
-          finalTimerStatus = 'finished';
-          finalFormatted = '00:00';
-        }
-      }
-
       // Build score line
       let scoreMessage = '';
       let scoreType: PracticeState['scoreType'] = 'neutral';
@@ -390,9 +386,15 @@ export default function App() {
         }
       }
 
-      // Append frozen time if completed run (zero blanks)
-      if (blankCount === 0 && finalFormatted) {
-        scoreMessage += ` · ⏱ ${finalFormatted}`;
+      // Show current clock time if the clock was started (does NOT auto-stop it)
+      const displayTime =
+        prev.timerStatus === 'running'
+          ? formatTime(prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : prev.elapsedSeconds)
+          : prev.timerStatus === 'finished'
+            ? prev.finalTimeFormatted || formatTime(prev.elapsedSeconds)
+            : '';
+      if (displayTime) {
+        scoreMessage += ` · ⏱ ${displayTime}`;
       }
 
       return {
@@ -401,8 +403,6 @@ export default function App() {
         hasChecked: true,
         scoreMessage,
         scoreType,
-        timerStatus: finalTimerStatus,
-        finalTimeFormatted: finalFormatted,
       };
     });
   }, [additionState, subtractionState, sharedData]);
@@ -464,43 +464,54 @@ export default function App() {
   // ------------------------------------------
   // Render Timer Pill Component
   // ------------------------------------------
-  const renderTimerPill = (state: PracticeState) => {
+  const renderTimerPill = (state: PracticeState, tab: TabType) => {
     const displayTime =
       state.timerStatus === 'finished' && state.finalTimeFormatted
         ? state.finalTimeFormatted
         : formatTime(state.elapsedSeconds);
 
+    const controlBtn =
+      state.timerStatus === 'running' ? (
+        <button
+          id={`btn-stop-clock-${tab}`}
+          type="button"
+          onClick={() => handleStopClock(tab)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-2xs"
+          title="Stop the clock and freeze your total time"
+        >
+          ■ Stop
+        </button>
+      ) : (
+        <button
+          id={`btn-start-clock-${tab}`}
+          type="button"
+          onClick={() => handleStartClock(tab)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-2xs"
+          title="Start the clock — solve as many as you can, then press Stop"
+        >
+          ▶ Start Clock
+        </button>
+      );
+
+    let pill;
     if (state.timerStatus === 'running') {
-      return (
+      pill = (
         <div
-          id="timer-pill-running"
+          id={`timer-pill-running-${tab}`}
           aria-live="polite"
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums transition-colors duration-200"
-          style={{
-            backgroundColor: currentTheme.cellFocusBg,
-            borderColor: currentTheme.cellFocusRing,
-            color: currentTheme.addition.checkBtnBg,
-          }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums transition-colors duration-200 bg-rose-50 border-rose-300 text-rose-700"
         >
           <span className="relative flex h-2.5 w-2.5">
-            <span
-              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-              style={{ backgroundColor: currentTheme.cellFocusRing }}
-            ></span>
-            <span
-              className="relative inline-flex rounded-full h-2.5 w-2.5"
-              style={{ backgroundColor: currentTheme.addition.checkBtnBg }}
-            ></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
           </span>
           <span>⏱ {displayTime}</span>
         </div>
       );
-    }
-
-    if (state.timerStatus === 'finished') {
-      return (
+    } else if (state.timerStatus === 'finished') {
+      pill = (
         <div
-          id="timer-pill-finished"
+          id={`timer-pill-finished-${tab}`}
           aria-live="polite"
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums transition-colors duration-200"
           style={{
@@ -513,17 +524,23 @@ export default function App() {
           <span>⏱ {displayTime}</span>
         </div>
       );
+    } else {
+      pill = (
+        <div
+          id={`timer-pill-idle-${tab}`}
+          aria-live="polite"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums text-slate-500 bg-slate-100 border-slate-300 transition-colors duration-200"
+        >
+          <span className="inline-block opacity-70">⏱</span>
+          <span>00:00</span>
+        </div>
+      );
     }
 
-    // Idle state
     return (
-      <div
-        id="timer-pill-idle"
-        aria-live="polite"
-        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums text-slate-500 bg-slate-100 border-slate-300 transition-colors duration-200"
-      >
-        <span className="inline-block opacity-70">⏱</span>
-        <span>00:00</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        {pill}
+        {controlBtn}
       </div>
     );
   };
@@ -700,10 +717,13 @@ export default function App() {
               >
                 Addition Table: Your Turn
               </h2>
-              {renderTimerPill(additionState)}
+              {renderTimerPill(additionState, 'addition')}
             </div>
-            <p className="text-slate-600 italic text-sm mb-5">
+            <p className="text-slate-600 italic text-sm mb-1">
               Fill in each cell with the sum of its row header and column header.
+            </p>
+            <p className="text-xs text-slate-500 mb-5">
+              ⏱ Press <strong>Start Clock</strong> when you begin and <strong>Stop</strong> when you finish — the total time is measured across as many checks as you like.
             </p>
 
             {/* Scroll Wrapper for Grid */}
@@ -992,10 +1012,13 @@ export default function App() {
               >
                 Subtraction Table: Your Turn
               </h2>
-              {renderTimerPill(subtractionState)}
+              {renderTimerPill(subtractionState, 'subtraction')}
             </div>
-            <p className="text-slate-600 italic text-sm mb-5">
+            <p className="text-slate-600 italic text-sm mb-1">
               Fill in each cell with the difference of its row header minus column header.
+            </p>
+            <p className="text-xs text-slate-500 mb-5">
+              ⏱ Press <strong>Start Clock</strong> when you begin and <strong>Stop</strong> when you finish — the total time is measured across as many checks as you like.
             </p>
 
             {/* Scroll Wrapper for Grid */}

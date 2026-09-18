@@ -7,8 +7,11 @@ interface MultiplicationPracticeProps {
 
 export const MIN_TABLE = 2;
 export const MAX_TABLE = 30;
-export const MIN_MULTIPLIER = 1;
-export const MAX_MULTIPLIER = 10;
+// Rule: never ask "× 1" or "× 10" questions (e.g. 2 × 1, 3 × 10) — too trivial by default.
+export const MIN_MULTIPLIER = 2;
+export const MAX_MULTIPLIER = 9;
+// Rule: never ask from the table of 10 — its sums are too easy.
+export const EXCLUDED_TABLE = 10;
 
 function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -16,6 +19,21 @@ function getRandomInt(min: number, max: number): number {
 
 function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+}
+
+/**
+ * Format elapsed seconds to MM:SS (or HH:MM:SS if past 1 hour) — matches the table pages.
+ */
+function formatTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  if (hours > 0) {
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }
+  return `${pad(minutes)}:${pad(seconds)}`;
 }
 
 function generateMultiplicationQuestion(
@@ -27,6 +45,17 @@ function generateMultiplicationQuestion(
   const high = Math.min(MAX_TABLE, Math.max(minTable, maxTable));
 
   let table = getRandomInt(low, high);
+  // Rule: skip the table of 10 — it is too easy to be a question.
+  if (table === EXCLUDED_TABLE) {
+    if (low === high) {
+      // Only table 10 selected: fall back to the nearest allowed table.
+      table = EXCLUDED_TABLE - 1;
+    } else {
+      // Re-pick uniformly from the range with 10 removed.
+      table = getRandomInt(low, high - 1);
+      if (table >= EXCLUDED_TABLE) table += 1;
+    }
+  }
   let multiplier = getRandomInt(MIN_MULTIPLIER, MAX_MULTIPLIER);
 
   if (
@@ -62,6 +91,7 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
     correctAnswer: number;
     isCorrect: boolean;
     wasPassed?: boolean;
+    timeTaken?: string;
   } | null>(null);
 
   const [history, setHistory] = useState<MultiplicationHistoryItem[]>([]);
@@ -72,11 +102,51 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
   const [showReference, setShowReference] = useState<boolean>(false);
   const [inputErrorNotice, setInputErrorNotice] = useState<string>('');
 
+  // Manual session clock — user starts it, solves as many questions as possible, then stops it
+  const [timerStatus, setTimerStatus] = useState<'idle' | 'running' | 'finished'>('idle');
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [finalTimeFormatted, setFinalTimeFormatted] = useState<string>('');
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [currentQuestion]);
+
+  // Clock ticker (active whenever status is 'running')
+  useEffect(() => {
+    if (timerStatus !== 'running' || !startTime) return;
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(elapsed);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [timerStatus, startTime]);
+
+  const resetTimer = () => {
+    setTimerStatus('idle');
+    setStartTime(null);
+    setElapsedSeconds(0);
+    setFinalTimeFormatted('');
+  };
+
+  const handleStartClock = () => {
+    setTimerStatus('running');
+    setStartTime(Date.now());
+    setElapsedSeconds(0);
+    setFinalTimeFormatted('');
+  };
+
+  const handleStopClock = () => {
+    if (timerStatus !== 'running') return;
+    const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : elapsedSeconds;
+    setElapsedSeconds(elapsed);
+    setFinalTimeFormatted(formatTime(elapsed));
+    setTimerStatus('finished');
+  };
 
   const applyRangeChange = (nextMin: number, nextMax: number) => {
     const safeMin = Math.max(MIN_TABLE, Math.min(MAX_TABLE, nextMin));
@@ -109,6 +179,12 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
       const userNum = parseInt(trimmed, 10);
       const isCorrect = !passed && !isNaN(userNum) && userNum === currentQuestion.answer;
 
+      // Snapshot the current clock time for this answer (clock keeps running — no per-question freeze)
+      const timeTaken =
+        timerStatus === 'running' && startTime
+          ? formatTime(Math.floor((Date.now() - startTime) / 1000))
+          : undefined;
+
       setLastResult({
         table: currentQuestion.table,
         multiplier: currentQuestion.multiplier,
@@ -116,6 +192,7 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
         correctAnswer: currentQuestion.answer,
         isCorrect,
         wasPassed: passed,
+        timeTaken,
       });
 
       setTotalAttempts((prev) => prev + 1);
@@ -139,6 +216,7 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
           userAnswer: passed ? 'Passed' : trimmed,
           isCorrect,
           timestamp: Date.now(),
+          timeTaken,
         },
         ...prev.slice(0, 19),
       ]);
@@ -149,7 +227,7 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
       setUserInputValue('');
       inputRef.current?.focus();
     },
-    [userInputValue, currentQuestion, minTable, maxTable],
+    [userInputValue, currentQuestion, minTable, maxTable, timerStatus, startTime],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -173,7 +251,91 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
     const high = Math.max(minTable, maxTable);
     setCurrentQuestion(generateMultiplicationQuestion(low, high));
     setUserInputValue('');
+    resetTimer();
     inputRef.current?.focus();
+  };
+
+  // Render Timer Pill Component with manual Start / Stop controls
+  const renderTimerPill = () => {
+    const displayTime =
+      timerStatus === 'finished' && finalTimeFormatted
+        ? finalTimeFormatted
+        : formatTime(elapsedSeconds);
+
+    const controlBtn =
+      timerStatus === 'running' ? (
+        <button
+          id="btn-stop-clock-multiplication"
+          type="button"
+          onClick={handleStopClock}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-2xs"
+          title="Stop the clock and freeze your total time"
+        >
+          ■ Stop
+        </button>
+      ) : (
+        <button
+          id="btn-start-clock-multiplication"
+          type="button"
+          onClick={handleStartClock}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer shadow-2xs"
+          title="Start the clock — solve as many questions as you can, then press Stop"
+        >
+          ▶ Start Clock
+        </button>
+      );
+
+    let pill;
+    if (timerStatus === 'running') {
+      pill = (
+        <div
+          id="multiplication-timer-pill-running"
+          aria-live="polite"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums transition-colors duration-200 bg-rose-50 border-rose-300 text-rose-700"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
+          </span>
+          <span>⏱ {displayTime}</span>
+        </div>
+      );
+    } else if (timerStatus === 'finished') {
+      pill = (
+        <div
+          id="multiplication-timer-pill-finished"
+          aria-live="polite"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums transition-colors duration-200"
+          style={{
+            backgroundColor: currentTheme.correctBg,
+            borderColor: currentTheme.correctBorder,
+            color: currentTheme.correctText,
+          }}
+        >
+          <span className="inline-block text-xs font-bold">✓</span>
+          <span>⏱ {displayTime}</span>
+        </div>
+      );
+    } else {
+      // Idle state
+      pill = (
+        <div
+          id="multiplication-timer-pill-idle"
+          aria-live="polite"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-semibold tracking-wide border tabular-nums text-slate-500 bg-slate-100 border-slate-300 transition-colors duration-200"
+        >
+          <span className="inline-block opacity-70">⏱</span>
+          <span>00:00</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2 flex-wrap">
+        {pill}
+        {controlBtn}
+      </div>
+    );
   };
 
   const accuracyPct = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
@@ -233,8 +395,8 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
                   aria-live="polite"
                 >
                   {isSingleTable
-                    ? `Practicing table of ${minTable} × 1–10`
-                    : `Practicing tables ${minTable}–${maxTable} × 1–10`}
+                    ? `Practicing table of ${minTable} × 2–9`
+                    : `Practicing tables ${minTable}–${maxTable} × 2–9`}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-3">
@@ -271,6 +433,12 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
                   All 2–30
                 </button>
               </div>
+              <p className="text-xs text-slate-500 mt-2.5 font-medium">
+                Rule: <span className="font-semibold text-slate-700">× 1</span> and{' '}
+                <span className="font-semibold text-slate-700">× 10</span> questions and the{' '}
+                <span className="font-semibold text-slate-700">table of 10</span> are never asked — they are too
+                easy by default.
+              </p>
             </div>
 
             <div className="flex items-center gap-2 self-end lg:self-auto">
@@ -323,11 +491,14 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
             </span>
           </div>
 
-          <div className="text-slate-500 font-medium tabular-nums">
-            Range:{' '}
-            <span className="font-semibold text-slate-700">
-              {isSingleTable ? `Table ${minTable}` : `Tables ${minTable} to ${maxTable}`} × 1–10
-            </span>
+          <div className="flex items-center gap-3">
+            {renderTimerPill()}
+            <div className="text-slate-500 font-medium tabular-nums">
+              Range:{' '}
+              <span className="font-semibold text-slate-700">
+                {isSingleTable ? `Table ${minTable}` : `Tables ${minTable} to ${maxTable}`} × 2–9
+              </span>
+            </div>
           </div>
         </div>
 
@@ -365,6 +536,11 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
                     Your entered answer was: <span className="line-through">{lastResult.userAnswer}</span>
                   </p>
                 )}
+                {lastResult.timeTaken && (
+                  <p className="text-xs sm:text-sm opacity-90 mt-0.5 font-semibold">
+                    ⏱ Clock at answer: {lastResult.timeTaken}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -395,7 +571,8 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
             <span className="text-slate-300 font-light">?</span>
           </div>
           <p className="text-slate-500 text-sm mt-2">
-            Random question from {isSingleTable ? `table ${minTable}` : `tables ${minTable} to ${maxTable}`}
+            Random question from {isSingleTable ? `table ${minTable}` : `tables ${minTable} to ${maxTable}`} —
+            no × 1, no × 10, no table of 10
           </p>
         </div>
 
@@ -477,8 +654,8 @@ export const MultiplicationPractice: React.FC<MultiplicationPracticeProps> = ({ 
               <h3 className="text-lg sm:text-xl font-bold text-slate-900">Multiplication Reference Key</h3>
               <p className="text-xs sm:text-sm text-slate-500 tabular-nums">
                 {isSingleTable
-                  ? `Table ${minTable} × 1 to 10`
-                  : `Tables ${minTable} to ${maxTable} × 1 to 10`}
+                  ? `Table ${minTable} × 2 to 9`
+                  : `Tables ${minTable} to ${maxTable} × 2 to 9`}
               </p>
             </div>
             <button

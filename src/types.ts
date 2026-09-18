@@ -80,6 +80,7 @@ export interface PowerHistoryItem {
   userAnswer: string;
   isCorrect: boolean;
   timestamp: number;
+  timeTaken?: string; // MM:SS when answered while clock was running
 }
 
 export interface MultiplicationQuestion {
@@ -97,4 +98,5 @@ export interface MultiplicationHistoryItem {
   userAnswer: string;
   isCorrect: boolean;
   timestamp: number;
+  timeTaken?: string; // MM:SS when answered while clock was running
 }
